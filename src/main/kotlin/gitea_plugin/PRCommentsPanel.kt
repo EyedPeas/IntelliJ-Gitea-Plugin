@@ -57,8 +57,18 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
 
     private class ScrollablePanel : JPanel(), Scrollable {
         override fun getPreferredScrollableViewportSize(): Dimension = preferredSize
-        override fun getScrollableUnitIncrement(visibleRect: java.awt.Rectangle?, orientation: Int, direction: Int): Int = 10
-        override fun getScrollableBlockIncrement(visibleRect: java.awt.Rectangle?, orientation: Int, direction: Int): Int = 100
+        override fun getScrollableUnitIncrement(
+            visibleRect: java.awt.Rectangle?,
+            orientation: Int,
+            direction: Int
+        ): Int = 10
+
+        override fun getScrollableBlockIncrement(
+            visibleRect: java.awt.Rectangle?,
+            orientation: Int,
+            direction: Int
+        ): Int = 100
+
         override fun getScrollableTracksViewportWidth(): Boolean = true
         override fun getScrollableTracksViewportHeight(): Boolean = false
     }
@@ -105,8 +115,7 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
                 if (comments.isNotEmpty()) {
                     val reviewPanel = createVerticalPanel()
                     reviewPanel.border = BorderFactory.createTitledBorder(reviewHeaderText)
-
-                    addComments(comments, reviewPanel)
+                    addComments(comments, reviewPanel, review.isStale ?: false)
 
                     contentPanel.add(reviewPanel)
                 } else {
@@ -120,7 +129,11 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
         repaint()
     }
 
-    private fun addComments(commentList: List<PullReviewComment>, reviewPanel: JPanel) {
+    private fun addComments(
+        commentList: List<PullReviewComment>,
+        reviewPanel: JPanel,
+        isStale: Boolean
+    ) {
         commentList.filter { it.path != null && (it.position != null || it.originalPosition != null) }
             .groupBy { (it.path!!.replace("\\", "/").trim('/')) to (it.position ?: it.originalPosition) }
             .forEach { (threadKey, threadComments) ->
@@ -128,9 +141,20 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
                 val safePosition = position ?: 0
 
                 val threadPanel = createVerticalPanel().apply {
-                    val titleLabel = LinkLabel<Unit>("Thread: $path#$safePosition", null) { _, _ ->
-                        if (path != "" && position != null) {
-                            gitUtils.openFileAtPosition(path, position.toLong())
+                    val resolver = threadComments.firstOrNull()?.resolver
+                    val threadId = "$path#$safePosition"
+                    val threadTitle = "Thread: $threadId"
+
+                    val titleLabel = if (resolver != null) {
+                        val status = if (isStale) "[Outdated] [Resolved] " else "[Resolved] "
+                        JBLabel("$status$threadTitle - Resolved by ${resolver.login}")
+                    } else if (isStale) {
+                        JBLabel("[Outdated] $threadTitle")
+                    } else {
+                        LinkLabel<Unit>(threadTitle, null) { _, _ ->
+                            if (path.isNotEmpty() && position != null) {
+                                gitUtils.openFileAtPosition(path, position.toLong())
+                            }
                         }
                     }
                     add(titleLabel)

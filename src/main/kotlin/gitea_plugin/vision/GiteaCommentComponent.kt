@@ -45,12 +45,13 @@ class GiteaCommentComponent(
                     font = font.deriveFont(Font.BOLD)
                     foreground = editor.colorsScheme.defaultForeground
                 }
-                val timeLabel = JBLabel(" at $time").apply {
+                val resolverText = comment.resolver?.login?.let { " (resolved by $it)" } ?: " (no resolver)"
+                val infoLabel = JBLabel(" at $time$resolverText").apply {
                     font = font.deriveFont(Font.ITALIC)
                     foreground = JBColor.GRAY
                 }
                 add(authorLabel, BorderLayout.WEST)
-                add(timeLabel, BorderLayout.CENTER)
+                add(infoLabel, BorderLayout.CENTER)
             }
 
             val bodyArea = JBTextArea(body).apply {
