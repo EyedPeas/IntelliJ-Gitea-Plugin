@@ -1,0 +1,42 @@
+<!-- Plugin Configuration File: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN, cannot be changed between the plugin versions. -->
+    <id>de.dichmann.Gitea_Plugin</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-name -->
+    <name>Gitea_Plugin</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor url="https://www.yourcompDany.com">YourDDCompany</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/best-practices-for-listing.html#plugin-description -->
+    <description> AASDFASDFASDFASDFASDFASDF ASDF ASDF ASDF SDFADSF</description>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.vcs</depends>
+    <depends>com.intellij.modules.lang</depends>
+    <depends>Git4Idea</depends>
+
+    <resource-bundle>messages.MyMessageBundle</resource-bundle>
+    <!-- Extensions defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService serviceImplementation="gitea_plugin.GiteaSettings"/>
+        <applicationConfigurable instance="gitea_plugin.GiteaSettingsConfigurable"
+                                 displayName="Gitea"
+                                 id="gitea_plugin.GiteaSettingsConfigurable"/>
+
+        <toolWindow id="MyToolWindow" factoryClass="gitea_plugin.MyToolWindowFactory"
+                    icon="AllIcons.Toolwindows.ToolWindowPalette"/>
+        <editorNotificationProvider implementation="gitea_plugin.vision.GiteaReviewNotificationProvider"/>
+    </extensions>
+
+    <applicationListeners>
+        <listener class="gitea_plugin.vision.GiteaCommentInlayManager"
+                  topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </applicationListeners>
+</idea-plugin>
