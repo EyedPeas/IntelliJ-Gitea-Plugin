@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "eyedPeas"
-version = "0.0.1"
+version = "0.0.2"
 
 repositories {
     mavenCentral()
@@ -46,6 +46,17 @@ intellijPlatform {
             recommended()
         }
     }
+
+    publishing {
+        channels = listOf("alpha")
+//        token.set(providers.environmentVariable("PUBLISH_TOKEN"))
+    }
+
+    signing {
+        certificateChain.set(providers.environmentVariable("CERTIFICATE_CHAIN"))
+        privateKey.set(providers.environmentVariable("PRIVATE_KEY"))
+        password.set(providers.environmentVariable("PRIVATE_KEY_PASSWORD"))
+    }
 }
 
 tasks {
@@ -55,15 +66,17 @@ tasks {
         targetCompatibility = "21"
     }
 
-    signPlugin {
-        certificateChain.set(providers.environmentVariable("CERTIFICATE_CHAIN"))
-        privateKey.set(providers.environmentVariable("PRIVATE_KEY"))
-        password.set(providers.environmentVariable("PRIVATE_KEY_PASSWORD"))
-    }
+//    signPlugin {
+//        certificateChain.set(providers.environmentVariable("CERTIFICATE_CHAIN"))
+//        privateKey.set(providers.environmentVariable("PRIVATE_KEY"))
+//        password.set(providers.environmentVariable("PRIVATE_KEY_PASSWORD"))
+//    }
 
     publishPlugin {
         token.set(providers.environmentVariable("PUBLISH_TOKEN"))
     }
+
+//
 }
 
 kotlin {

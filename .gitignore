@@ -5,6 +5,7 @@ build/
 !**/src/test/**/build/
 .kotlin
 plugin_signing
+DEV_README.md
 
 ### IntelliJ IDEA ###
 .intellijPlatform
