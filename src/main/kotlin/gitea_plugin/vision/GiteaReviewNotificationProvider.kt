@@ -7,6 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.EditorNotificationProvider
+import com.intellij.ui.EditorNotifications
 import gitea_plugin.GlobalGiteaCache
 import java.util.function.Function
 import javax.swing.JComponent
@@ -47,6 +48,6 @@ class GiteaReviewNotificationProvider : EditorNotificationProvider {
             }
         }
         // Refresh notifications
-        com.intellij.ui.EditorNotifications.getInstance(project).updateAllNotifications()
+        EditorNotifications.getInstance(project).updateAllNotifications()
     }
 }

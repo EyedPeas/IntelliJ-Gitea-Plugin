@@ -1,9 +1,11 @@
 package gitea_plugin
 
+import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
+import com.intellij.ui.EditorNotifications
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
@@ -187,8 +189,8 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
 
     private fun triggerCodeVisionUpdate() {
         ApplicationManager.getApplication().invokeLater {
-            com.intellij.codeInsight.daemon.DaemonCodeAnalyzer.getInstance(project).restart()
-            com.intellij.ui.EditorNotifications.getInstance(project).updateAllNotifications()
+            DaemonCodeAnalyzer.getInstance(project).restart()
+            EditorNotifications.getInstance(project).updateAllNotifications()
 
             // Update inlays in open editors
             val fileEditorManager = FileEditorManager.getInstance(project)
