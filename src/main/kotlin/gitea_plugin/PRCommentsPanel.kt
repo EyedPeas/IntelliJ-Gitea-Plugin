@@ -12,7 +12,6 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.labels.LinkLabel
 import com.intellij.util.ui.UIUtil
 import gitea_plugin.vision.GiteaCommentInlayManager
-import io.gitea.model.PullReview
 import io.gitea.model.PullReviewComment
 import org.threeten.bp.format.DateTimeFormatter
 import java.awt.BorderLayout
@@ -105,7 +104,7 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
                     val reviewPanel = createVerticalPanel()
                     reviewPanel.border = BorderFactory.createTitledBorder(reviewHeaderText)
 
-                    addComments(review, comments, reviewPanel)
+                    addComments(comments, reviewPanel)
 
                     contentPanel.add(reviewPanel)
                 } else {
@@ -119,7 +118,7 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
         repaint()
     }
 
-    private fun addComments(review: PullReview, commentList: List<PullReviewComment>, reviewPanel: JPanel) {
+    private fun addComments(commentList: List<PullReviewComment>, reviewPanel: JPanel) {
         commentList.filter { it.path != null && (it.position != null || it.originalPosition != null) }
             .groupBy { (it.path!!.replace("\\", "/").trim('/')) to (it.position ?: it.originalPosition) }
             .forEach { (threadKey, threadComments) ->

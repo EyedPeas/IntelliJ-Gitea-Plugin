@@ -5,12 +5,10 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextArea
-import com.intellij.util.ui.JBUI
 import io.gitea.model.PullReviewComment
 import org.threeten.bp.format.DateTimeFormatter
 import java.awt.BorderLayout
 import java.awt.Font
-import java.awt.Insets
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
 import javax.swing.JPanel
@@ -18,7 +16,7 @@ import javax.swing.text.View
 
 class GiteaCommentComponent(
     private val editor: Editor,
-    private val comments: List<PullReviewComment>
+    comments: List<PullReviewComment>
 ) : JBPanel<GiteaCommentComponent>(BorderLayout()) {
     private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
     private val padding = 8

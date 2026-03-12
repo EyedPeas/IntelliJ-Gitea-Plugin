@@ -100,7 +100,7 @@ object GlobalGiteaCache {
                 }
             } else if (currentFile != null && !line.startsWith("--- ")) {
                 if (line.startsWith("+")) {
-                    result.getOrPut(currentFile!!) { mutableSetOf() }.add(currentLineInNewFile)
+                    result.getOrPut(currentFile) { mutableSetOf() }.add(currentLineInNewFile)
                     currentLineInNewFile++
                 } else if (line.startsWith("-")) {
                     // Skip deletions in new file numbering
@@ -179,7 +179,7 @@ object GlobalGiteaCache {
         val normalizedPath = path.replace("\\", "/").trim('/')
         val lineMap = fileComments.getOrPut(normalizedPath) { ConcurrentHashMap() }
         comments.filter { it.position != null || it.originalPosition != null }.groupBy {
-            (it.position ?: it.originalPosition)!!.toInt()
+            (it.position ?: it.originalPosition)!!
         }.forEach { (line, newComments) ->
             val existingComments = lineMap.getOrPut(line) { mutableListOf() }
             // Avoid duplicates if same review is fetched again

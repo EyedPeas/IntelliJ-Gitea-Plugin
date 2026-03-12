@@ -1,28 +1,29 @@
 package gitea_plugin.vision
 
+import com.intellij.diff.DiffContentFactory
+import com.intellij.diff.DiffManager
+import com.intellij.diff.requests.SimpleDiffRequest
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.editor.Editor
+import com.intellij.openapi.editor.EditorGutterAction
 import com.intellij.openapi.editor.event.VisibleAreaListener
+import com.intellij.openapi.editor.markup.ActiveGutterRenderer
+import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.FileEditorManagerListener
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.ui.JBColor
 import com.intellij.util.concurrency.AppExecutorUtil
-import gitea_plugin.GitUtils
-import gitea_plugin.GlobalGiteaCache
-import java.awt.*
-import java.awt.event.MouseEvent
-import com.intellij.openapi.editor.markup.ActiveGutterRenderer
-import com.intellij.openapi.editor.EditorGutterAction
-import com.intellij.diff.DiffContentFactory
-import com.intellij.diff.DiffManager
-import com.intellij.diff.requests.SimpleDiffRequest
 import git4idea.repo.GitRepositoryManager
 import git4idea.util.GitFileUtils
+import gitea_plugin.GitUtils
+import gitea_plugin.GlobalGiteaCache
+import java.awt.Cursor
+import java.awt.Graphics
+import java.awt.Rectangle
+import java.awt.event.MouseEvent
 
 class GiteaCommentInlayManager : FileEditorManagerListener {
     override fun selectionChanged(event: com.intellij.openapi.fileEditor.FileEditorManagerEvent) {

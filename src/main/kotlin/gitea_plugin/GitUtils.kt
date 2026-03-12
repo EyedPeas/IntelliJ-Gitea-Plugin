@@ -14,14 +14,12 @@ class GitUtils(val project: Project) {
     private val repositoryManager = GitRepositoryManager.getInstance(project)
     private val repositories get() = repositoryManager.repositories
 
-    fun getRepoBaseUrl(): gitea_plugin.GitRepoInfo? {
+    fun getRepoBaseUrl(): GitRepoInfo? {
         if (repositories.isEmpty()) return null
 
         for (repo in repositories) {
             for (remote in repo.info.remotes) {
                 for (remotePushUrl in remote.urls) {
-                    // ssh://git@code.flavia:29420/EAMSavin/savin.git
-                    // https://code.flavia/EAMSavin/savin.git
                     val sshRegex = Regex("""ssh:\/\/[^@]+@([^:\/]+)(?::\d+)?\/(.+)\/(.+?)(\.git)?$""")
                     val httpsRegex = Regex("""https?:\/\/([^:\/]+)(?::\d+)?\/(.+)\/(.+?)(\.git)?$""")
 

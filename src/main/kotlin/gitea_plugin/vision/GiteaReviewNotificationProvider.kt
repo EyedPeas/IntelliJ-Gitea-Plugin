@@ -12,14 +12,7 @@ import java.util.function.Function
 import javax.swing.JComponent
 
 class GiteaReviewNotificationProvider : EditorNotificationProvider {
-    private var showNotificationBanner = false
     override fun collectNotificationData(project: Project, file: VirtualFile): Function<in FileEditor, out JComponent?>? {
-//        // Only show if we have some data for this file or review mode is enabled
-//        val hasComments = GlobalGiteaCache.getCommentsForFile(file.path).isNotEmpty() ||
-//                         GlobalGiteaCache.getChangedLinesForFile(file.path).isNotEmpty()
-//
-//        if (!hasComments && !GlobalGiteaCache.isReviewModeEnabled()) return null
-
         if (!GlobalGiteaCache.shouldShowReviewModeBanner()) return null
 
         return Function { fileEditor ->
