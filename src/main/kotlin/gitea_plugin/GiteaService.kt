@@ -6,6 +6,7 @@ import io.gitea.Configuration
 import io.gitea.api.RepositoryApi
 import io.gitea.api.UserApi
 import io.gitea.auth.ApiKeyAuth
+import io.gitea.model.ChangedFile
 import io.gitea.model.PullRequest
 import io.gitea.model.PullReview
 import io.gitea.model.PullReviewComment
@@ -155,6 +156,25 @@ class GiteaService(private val project: Project) {
                 ApplicationManager.getApplication().invokeLater {
                     onError()
                 }
+            }
+        }
+    }
+
+    fun fetchAllChangedFiles(pullRequestIndex: Long, onSuccess: (List<ChangedFile>) -> Unit, onError: () -> Unit) {
+        ApplicationManager.getApplication().executeOnPooledThread {
+            ensureReady()
+            if (!isReady()) {
+                onError()
+                return@executeOnPooledThread
+            }
+            val repoApi = RepositoryApi()
+            try {
+                val changedFiles = repoApi.repoGetPullRequestFiles(repoOwner, repoName, pullRequestIndex, null, null, null, null)
+                ApplicationManager.getApplication().invokeLater {
+                    onSuccess(changedFiles)
+                }
+            } catch (e: Exception) {
+                onError()
             }
         }
     }

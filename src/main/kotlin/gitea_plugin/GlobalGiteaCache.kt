@@ -18,6 +18,7 @@ object GlobalGiteaCache {
     private val reviews = ConcurrentHashMap<Long, PullReview>()
     private val reviewComments = ConcurrentHashMap<Long, List<PullReviewComment>>()
     private val changedLines = ConcurrentHashMap<String, Set<Int>>()
+    private val changedFiles = mutableSetOf<String>()
     private var baseBranch: String? = null
     private var shouldShowReviewModeBanner = false
     private var showReviewModeBanner = true
@@ -31,6 +32,19 @@ object GlobalGiteaCache {
     fun setReviewModeEnabled(enabled: Boolean) {
         showReviewModeBanner = enabled
     }
+    fun setChangedFiles(files: Set<String>) {
+        synchronized(changedFiles) {
+            changedFiles.clear()
+            changedFiles.addAll(files)
+        }
+        notifyReviewListeners()
+    }
+
+    fun getChangedFiles(): Set<String> {
+        synchronized(changedFiles) {
+            return changedFiles.toSet()
+        }
+    }
 
     fun isReviewModeEnabled(): Boolean = showReviewModeBanner
 
@@ -41,6 +55,7 @@ object GlobalGiteaCache {
             setBaseBranch(pr.base?.ref)
             ApplicationManager.getApplication().executeOnPooledThread {
                 loadComments(project, pr)
+                loadChangedFiles(project, pr)
             }
             if (pr.head?.ref != null) {
                 ApplicationManager.getApplication().executeOnPooledThread {
@@ -83,6 +98,16 @@ object GlobalGiteaCache {
             notifyReviewListeners()
         }, onError = {
             println("Error fetching PR diff")
+        })
+    }
+
+    private fun loadChangedFiles(project: Project, pr: PullRequest) {
+        val giteaService = GiteaService(project)
+        giteaService.fetchAllChangedFiles(pr.number, onSuccess =  { changedFiles ->
+            setChangedFiles(changedFiles.map { it.filename }.toSet())
+            notifyReviewListeners()
+        }, onError = {
+            println("Error fetching changed files")
         })
     }
 
@@ -203,6 +228,9 @@ object GlobalGiteaCache {
         reviews.clear()
         reviewComments.clear()
         changedLines.clear()
+        synchronized(changedFiles) {
+            changedFiles.clear()
+        }
         baseBranch = null
     }
 }

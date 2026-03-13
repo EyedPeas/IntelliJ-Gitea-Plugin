@@ -18,6 +18,7 @@ class MyToolWindowFactory : ToolWindowFactory {
         val filesChangedOverview = FilesChangedOverviewPanel(project)
         toolWindow.contentManager.addContent(prOverview)
         toolWindow.contentManager.addContent(ContentFactory.getInstance().createContent(prComments, "Comments", false))
+        toolWindow.contentManager.addContent(ContentFactory.getInstance().createContent(filesChangedOverview, "Files Changed", false))
 
 
     }
