@@ -1,6 +1,7 @@
 package gitea_plugin
 
 import com.intellij.testFramework.fixtures.BasePlatformTestCase
+import gitea_plugin.components.PRCommentsPanel
 import io.gitea.model.PullRequest
 import io.gitea.model.PullReview
 import io.gitea.model.PullReviewComment

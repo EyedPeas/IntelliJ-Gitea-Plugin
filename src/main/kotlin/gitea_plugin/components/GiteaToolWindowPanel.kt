@@ -1,4 +1,4 @@
-package gitea_plugin
+package gitea_plugin.components
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ModalityState
@@ -7,6 +7,10 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
+import gitea_plugin.GiteaService
+import gitea_plugin.GiteaSettings
+import gitea_plugin.GiteaSettingsConfigurable
+import gitea_plugin.GlobalGiteaCache
 import java.awt.BorderLayout
 import java.awt.GridLayout
 import javax.swing.BorderFactory
@@ -31,7 +35,7 @@ class GiteaToolWindowPanel(private val project: Project) : JBPanel<GiteaToolWind
     }
 
     private fun fetchData() {
-        val token = GiteaSettings.getInstance().state.giteaToken
+        val token = GiteaSettings.Companion.getInstance().state.giteaToken
         if (token.isBlank()) {
             ApplicationManager.getApplication().invokeLater({
                 removeAll()

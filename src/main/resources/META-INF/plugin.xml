@@ -30,7 +30,7 @@
                                  displayName="Gitea"
                                  id="gitea_plugin.GiteaSettingsConfigurable"/>
 
-        <toolWindow id="MyToolWindow" factoryClass="gitea_plugin.MyToolWindowFactory"
+        <toolWindow id="MyToolWindow" factoryClass="gitea_plugin.components.MyToolWindowFactory"
                     icon="AllIcons.Toolwindows.ToolWindowPalette"/>
         <editorNotificationProvider implementation="gitea_plugin.vision.GiteaReviewNotificationProvider"/>
     </extensions>

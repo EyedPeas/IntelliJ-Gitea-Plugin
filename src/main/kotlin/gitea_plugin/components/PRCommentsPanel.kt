@@ -1,4 +1,4 @@
-package gitea_plugin
+package gitea_plugin.components
 
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer
 import com.intellij.openapi.application.ApplicationManager
@@ -13,17 +13,17 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.icons.AllIcons
 import com.intellij.ui.components.labels.LinkLabel
-import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
-import com.jetbrains.rd.util.string.println
+import gitea_plugin.GitUtils
+import gitea_plugin.GlobalGiteaCache
 import gitea_plugin.vision.GiteaCommentInlayManager
 import io.gitea.model.PullReviewComment
 import org.threeten.bp.format.DateTimeFormatter
 import java.awt.BorderLayout
 import java.awt.Cursor
 import java.awt.Dimension
-import java.awt.FlowLayout
+import java.awt.Rectangle
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.*
@@ -66,13 +66,13 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
     internal class ScrollablePanel : JPanel(), Scrollable {
         override fun getPreferredScrollableViewportSize(): Dimension = preferredSize
         override fun getScrollableUnitIncrement(
-            visibleRect: java.awt.Rectangle?,
+            visibleRect: Rectangle?,
             orientation: Int,
             direction: Int
         ): Int = 10
 
         override fun getScrollableBlockIncrement(
-            visibleRect: java.awt.Rectangle?,
+            visibleRect: Rectangle?,
             orientation: Int,
             direction: Int
         ): Int = 100

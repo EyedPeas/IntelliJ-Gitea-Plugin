@@ -1,4 +1,4 @@
-package gitea_plugin
+package gitea_plugin.components
 
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane

@@ -1,22 +1,14 @@
-package gitea_plugin
+package gitea_plugin.components
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
+import gitea_plugin.GitUtils
+import gitea_plugin.GlobalGiteaCache
 import io.gitea.model.PullRequest
 import java.awt.BorderLayout
-import java.awt.Component
-import java.awt.Cursor
-import java.awt.event.MouseAdapter
-import java.awt.event.MouseEvent
-import java.awt.font.TextAttribute
-import javax.swing.BorderFactory
-import javax.swing.JLabel
-import javax.swing.JTable
-import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
 
 class PRDetailsPanel(private val project: Project) : JBPanel<PRDetailsPanel>(BorderLayout()) {
