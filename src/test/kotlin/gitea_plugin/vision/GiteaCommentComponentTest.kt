@@ -10,20 +10,21 @@ class GiteaCommentComponentTest : BasePlatformTestCase() {
         val editor = myFixture.editor
         val comment = PullReviewComment().apply {
             user = User().apply { login = "testuser" }
-            resolver = User().apply { login = "resolverUser" }
+            resolver = null // Not resolved, so it's not collapsed by default
             body = "This is a very long comment that should wrap if the width is small enough. ".repeat(20)
         }
         
         val component = GiteaCommentComponent(editor, listOf(comment))
+        // Set a default font so font metrics work in headless mode
+        component.font = java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12)
         
         component.updateWidth(200)
         val h1 = component.preferredSize.height
+        System.out.println("[DEBUG_LOG] Height at 200: $h1")
         
         component.updateWidth(800)
         val h2 = component.preferredSize.height
-        
-        println("[DEBUG_LOG] Height at 200: $h1")
-        println("[DEBUG_LOG] Height at 800: $h2")
+        System.out.println("[DEBUG_LOG] Height at 800: $h2")
         
         assertTrue("Height at 200 ($h1) should be greater than height at 800 ($h2)", h1 > h2)
     }

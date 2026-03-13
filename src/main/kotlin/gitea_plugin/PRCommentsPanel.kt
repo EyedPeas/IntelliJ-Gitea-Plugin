@@ -11,20 +11,28 @@ import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
+import com.intellij.icons.AllIcons
 import com.intellij.ui.components.labels.LinkLabel
+import com.intellij.ui.dsl.builder.panel
+import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
+import com.jetbrains.rd.util.string.println
 import gitea_plugin.vision.GiteaCommentInlayManager
 import io.gitea.model.PullReviewComment
 import org.threeten.bp.format.DateTimeFormatter
 import java.awt.BorderLayout
+import java.awt.Cursor
 import java.awt.Dimension
+import java.awt.FlowLayout
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.*
 import javax.swing.BoxLayout.Y_AXIS
 
 class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(BorderLayout()) {
     private val gitUtils = GitUtils(project)
     private val formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
-    private val contentPanel = ScrollablePanel().apply {
+    internal val contentPanel = ScrollablePanel().apply {
         layout = BoxLayout(this, Y_AXIS)
         alignmentX = LEFT_ALIGNMENT
     }
@@ -55,7 +63,7 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
         }
     }
 
-    private class ScrollablePanel : JPanel(), Scrollable {
+    internal class ScrollablePanel : JPanel(), Scrollable {
         override fun getPreferredScrollableViewportSize(): Dimension = preferredSize
         override fun getScrollableUnitIncrement(
             visibleRect: java.awt.Rectangle?,
@@ -137,15 +145,22 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
         commentList.filter { it.path != null && (it.position != null || it.originalPosition != null) }
             .groupBy { (it.path!!.replace("\\", "/").trim('/')) to (it.position ?: it.originalPosition) }
             .forEach { (threadKey, threadComments) ->
+                println(threadKey)
+                threadComments.forEach { println(it) }
                 val (path, position) = threadKey
                 val safePosition = position ?: 0
+                val resolver = threadComments.map { it.resolver }.distinct().firstOrNull()
+                val isResolved = resolver != null
 
                 val threadPanel = createVerticalPanel().apply {
-                    val resolver = threadComments.firstOrNull()?.resolver
+                    border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                }
+
+                val headerPanel = JPanel(BorderLayout(5, 0)).apply {
+                    alignmentX = LEFT_ALIGNMENT
                     val threadId = "$path#$safePosition"
                     val threadTitle = "Thread: $threadId"
-
-                    val titleLabel = if (resolver != null) {
+                    val titleLabel = if (isResolved) {
                         val status = if (isStale) "[Outdated] [Resolved] " else "[Resolved] "
                         JBLabel("$status$threadTitle - Resolved by ${resolver.login}")
                     } else if (isStale) {
@@ -157,9 +172,36 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
                             }
                         }
                     }
-                    add(titleLabel)
-                    border = BorderFactory.createEmptyBorder(5, 5, 5, 5)
+                    add(titleLabel, BorderLayout.CENTER)
                 }
+
+                val contentWrapper = createVerticalPanel().apply {
+                    alignmentX = LEFT_ALIGNMENT
+                }
+
+                if (isResolved) {
+                    val arrowLabel = JBLabel(AllIcons.General.ArrowRight)
+                    headerPanel.add(arrowLabel, BorderLayout.WEST)
+                    contentWrapper.isVisible = false
+
+                    val toggleAction = object : MouseAdapter() {
+                        override fun mouseClicked(e: MouseEvent?) {
+                            contentWrapper.isVisible = !contentWrapper.isVisible
+                            arrowLabel.icon = if (contentWrapper.isVisible) AllIcons.General.ArrowDown else AllIcons.General.ArrowRight
+                            revalidate()
+                            repaint()
+                        }
+                    }
+//                    headerPanel.addMouseListener(toggleAction)
+//                    headerPanel.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                    
+                    // Allow clicking on arrow label too (it's part of headerPanel but just to be sure)
+                    arrowLabel.addMouseListener(toggleAction)
+                    arrowLabel.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
+                }
+
+                threadPanel.add(headerPanel)
+                threadPanel.add(contentWrapper)
 
                 val diffText = threadComments.first().diffHunk ?: ""
                 val htmlDiff = diffText.lines().joinToString("") { line ->
@@ -182,8 +224,9 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
                 val diffPanel = JPanel(BorderLayout()).apply {
                     alignmentX = LEFT_ALIGNMENT
                     add(diffPane, BorderLayout.CENTER)
+                    border = JBUI.Borders.empty(5, 20, 5, 0)
                 }
-                threadPanel.add(diffPanel)
+                contentWrapper.add(diffPanel)
 
                 threadComments.sortedBy { it.createdAt }.forEach { comment ->
                     val author = comment.user?.login ?: "Unknown"
@@ -191,21 +234,22 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
                     val time = comment.createdAt?.format(formatter) ?: ""
                     val commentHeader = "<html><b>$author</b> at $time</html>"
 
-                    val headerPanel = JPanel(BorderLayout()).apply {
+                    val commentHeaderPanel = JPanel(BorderLayout()).apply {
                         alignmentX = LEFT_ALIGNMENT
                         add(JBLabel(commentHeader), BorderLayout.WEST)
                     }
 
                     val commentPanel = JPanel(BorderLayout()).apply {
                         alignmentX = LEFT_ALIGNMENT
-                        add(headerPanel, BorderLayout.NORTH)
+                        add(commentHeaderPanel, BorderLayout.NORTH)
                         add(JBTextArea(body).apply {
                             isEditable = false
                             lineWrap = true
                             wrapStyleWord = true
                         }, BorderLayout.CENTER)
+                        border = JBUI.Borders.empty(5, 20, 5, 0)
                     }
-                    threadPanel.add(commentPanel)
+                    contentWrapper.add(commentPanel)
                 }
                 reviewPanel.add(threadPanel)
             }
