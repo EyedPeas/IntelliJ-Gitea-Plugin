@@ -1,5 +1,11 @@
 package gitea_plugin
 
+import com.intellij.openapi.actionSystem.ActionManager
+import com.intellij.openapi.actionSystem.ActionPlaces
+import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.actionSystem.DataContext
+import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -54,9 +60,25 @@ class GitUtils(val project: Project) {
         }
     }
 
-    fun pullCurrentBranch() {
+    fun updateCurrentBranch() {
         if (repositories.isEmpty()) return
-        repositories.firstOrNull()?.update()
+
+        val actionManager = ActionManager.getInstance()
+        val action = actionManager.getAction("Vcs.UpdateProject") ?: return
+        val dataContext = DataContext { dataId ->
+            if (CommonDataKeys.PROJECT.`is`(dataId)) project else null
+        }
+
+        val event = AnActionEvent.createEvent(
+            action,
+            dataContext,
+            null,
+            ActionPlaces.UNKNOWN,
+            com.intellij.openapi.actionSystem.ActionUiKind.NONE,
+            null
+        )
+
+        ActionUtil.performAction(action, event)
     }
 
     fun checkoutBranch(ref: String) {

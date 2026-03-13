@@ -46,8 +46,10 @@ object GlobalGiteaCache {
                 ApplicationManager.getApplication().executeOnPooledThread {
                     val gitUtils = GitUtils(project)
                     gitUtils.fetchAll()
-                    gitUtils.checkoutBranch(pr.head.ref)
-                    gitUtils.pullCurrentBranch()
+                    ApplicationManager.getApplication().invokeLater {
+                        gitUtils.checkoutBranch(pr.head.ref)
+                        gitUtils.updateCurrentBranch()
+                    }
                 }
             }
         }

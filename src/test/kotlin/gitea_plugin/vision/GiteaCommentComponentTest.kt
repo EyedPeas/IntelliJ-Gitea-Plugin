@@ -11,22 +11,29 @@ class GiteaCommentComponentTest : BasePlatformTestCase() {
         val comment = PullReviewComment().apply {
             user = User().apply { login = "testuser" }
             resolver = null // Not resolved, so it's not collapsed by default
-            body = "This is a very long comment that should wrap if the width is small enough. ".repeat(20)
+            body = "Line1\nLine2\nLine3\nLine4\nLine5"
         }
         
         val component = GiteaCommentComponent(editor, listOf(comment))
         // Set a default font so font metrics work in headless mode
-        component.font = java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12)
+        val font = java.awt.Font("Monospaced", java.awt.Font.PLAIN, 12)
+        component.font = font
+        val fm = component.getFontMetrics(font)
+        val lineHeight = fm.height
         
-        component.updateWidth(200)
+        // Very wide, should be 5 lines
+        component.updateWidth(1000)
         val h1 = component.preferredSize.height
-        System.out.println("[DEBUG_LOG] Height at 200: $h1")
         
-        component.updateWidth(800)
+        // Very narrow, each line should wrap multiple times
+        component.updateWidth(10)
         val h2 = component.preferredSize.height
-        System.out.println("[DEBUG_LOG] Height at 800: $h2")
         
-        assertTrue("Height at 200 ($h1) should be greater than height at 800 ($h2)", h1 > h2)
+        System.out.println("[DEBUG_LOG] Height at 1000: $h1")
+        System.out.println("[DEBUG_LOG] Height at 10: $h2")
+        System.out.println("[DEBUG_LOG] Line height: $lineHeight")
+        
+        assertTrue("Height at 10 ($h2) should be greater than height at 1000 ($h1)", h2 > h1)
     }
 
     fun testCommentWithoutResolver() {

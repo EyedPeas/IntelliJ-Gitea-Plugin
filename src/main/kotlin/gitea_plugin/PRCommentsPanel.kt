@@ -145,8 +145,6 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
         commentList.filter { it.path != null && (it.position != null || it.originalPosition != null) }
             .groupBy { (it.path!!.replace("\\", "/").trim('/')) to (it.position ?: it.originalPosition) }
             .forEach { (threadKey, threadComments) ->
-                println(threadKey)
-                threadComments.forEach { println(it) }
                 val (path, position) = threadKey
                 val safePosition = position ?: 0
                 val resolver = threadComments.map { it.resolver }.distinct().firstOrNull()
@@ -192,8 +190,6 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
                             repaint()
                         }
                     }
-//                    headerPanel.addMouseListener(toggleAction)
-//                    headerPanel.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
                     
                     // Allow clicking on arrow label too (it's part of headerPanel but just to be sure)
                     arrowLabel.addMouseListener(toggleAction)
