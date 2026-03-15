@@ -115,7 +115,16 @@ class GiteaToolWindowPanel(private val project: Project) : JBPanel<GiteaToolWind
                 onSuccess = { prs ->
                     ApplicationManager.getApplication().invokeLater({
                         removeAll()
-                        add(prListPanel)
+                        add(JPanel().apply {
+                            layout = BorderLayout()
+                            val unloadButton = JButton("Unload Pull Request")
+                            unloadButton.addActionListener {
+                                GlobalGiteaCache.setReviewModeEnabled(false)
+                                GlobalGiteaCache.setLoadedPullRequest(null, project)
+                            }
+                            add(unloadButton, BorderLayout.NORTH)
+                            add(prListPanel, BorderLayout.CENTER)
+                        })
                         add(prDetailsPanel)
                         add(prCommentsPanel)
                         prListPanel.updateList(prs)

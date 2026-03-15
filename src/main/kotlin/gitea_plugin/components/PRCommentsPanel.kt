@@ -99,6 +99,13 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
             revalidate()
             repaint()
             return
+        } else {
+            val updateCommentsButton = JButton("Update Comments")
+            contentPanel.add(updateCommentsButton)
+
+            updateCommentsButton.addActionListener {
+                GlobalGiteaCache.updateComments(project, pr)
+            }
         }
 
         if (reviews.isEmpty()) {

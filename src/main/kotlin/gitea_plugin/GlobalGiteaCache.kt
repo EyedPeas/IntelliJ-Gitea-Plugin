@@ -62,13 +62,21 @@ object GlobalGiteaCache {
                     val gitUtils = GitUtils(project)
                     gitUtils.fetchAll()
                     ApplicationManager.getApplication().invokeLater {
-                        gitUtils.checkoutBranch(pr.head.ref)
-                        gitUtils.updateCurrentBranch()
+                        gitUtils.checkoutBranch(pr.head.ref) {
+                            gitUtils.updateCurrentBranchIfNotInSync()
+                        }
                     }
                 }
             }
         }
         listeners.forEach { it(pr) }
+    }
+
+    fun updateComments(project: Project, pr: PullRequest) {
+        reviews.clear()
+        reviewComments.clear()
+        changedLines.clear()
+        loadComments(project, pr)
     }
 
     private fun loadComments(project: Project, pr: PullRequest) {

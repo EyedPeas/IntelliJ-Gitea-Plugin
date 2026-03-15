@@ -9,15 +9,32 @@ import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.EditorNotificationProvider
 import com.intellij.ui.EditorNotifications
 import gitea_plugin.GlobalGiteaCache
+import kotlinx.html.Entities
 import java.util.function.Function
 import javax.swing.JComponent
 
 class GiteaReviewNotificationProvider : EditorNotificationProvider {
     override fun collectNotificationData(project: Project, file: VirtualFile): Function<in FileEditor, out JComponent?>? {
-        if (!GlobalGiteaCache.shouldShowReviewModeBanner()) return null
+//        var isPullRequestLoaded = false
+//        GlobalGiteaCache.addListener { pr ->
+//            println("[GiteaReviewNotificationProvider] Pull request loaded: $isPullRequestLoaded")
+//            isPullRequestLoaded = GlobalGiteaCache.hasPullRequestLoaded()
+//        }
+//
+//        if (!isPullRequestLoaded) {
+//            println("[GiteaReviewNotificationProvider] No pull request loaded: returning null")
+//            return null
+//        }
+//        if (!GlobalGiteaCache.shouldShowReviewModeBanner()) {
+//            println("[GiteaReviewNotificationProvider] Review mode banner disabled: returning null")
+//            return null
+//        }
 
         return Function { fileEditor ->
             if (fileEditor !is TextEditor) return@Function null
+
+
+            if (!GlobalGiteaCache.hasPullRequestLoaded()) return@Function null
 
             val panel = EditorNotificationPanel(fileEditor, EditorNotificationPanel.Status.Info)
             panel.text = "Gitea Review Mode"

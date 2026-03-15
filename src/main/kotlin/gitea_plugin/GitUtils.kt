@@ -6,6 +6,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.DataContext
 import com.intellij.openapi.actionSystem.ex.ActionUtil
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
@@ -60,33 +61,60 @@ class GitUtils(val project: Project) {
         }
     }
 
-    fun updateCurrentBranch() {
+    fun updateCurrentBranchIfNotInSync() {
         if (repositories.isEmpty()) return
 
-        val actionManager = ActionManager.getInstance()
-        val action = actionManager.getAction("Vcs.UpdateProject") ?: return
-        val dataContext = DataContext { dataId ->
-            if (CommonDataKeys.PROJECT.`is`(dataId)) project else null
+        ApplicationManager.getApplication().executeOnPooledThread {
+            var notInSync = false
+            for (repo in repositories) {
+                val currentBranch = repo.currentBranch ?: continue
+                val trackInfo = repo.getBranchTrackInfo(currentBranch.name) ?: continue
+                val remoteBranch = trackInfo.remoteBranch
+
+                val localHash = repo.branches.getHash(currentBranch)
+                val remoteHash = repo.branches.getHash(remoteBranch)
+
+                if (localHash != null && remoteHash != null && localHash != remoteHash) {
+                    notInSync = true
+                    break
+                }
+            }
+
+            if (notInSync) {
+                ApplicationManager.getApplication().invokeLater {
+                    val actionManager = ActionManager.getInstance()
+                    val action = actionManager.getAction("Vcs.UpdateProject") ?: return@invokeLater
+                    val dataContext = DataContext { dataId ->
+                        if (CommonDataKeys.PROJECT.`is`(dataId)) project else null
+                    }
+
+                    val event = AnActionEvent.createEvent(
+                        action,
+                        dataContext,
+                        null,
+                        ActionPlaces.UNKNOWN,
+                        com.intellij.openapi.actionSystem.ActionUiKind.NONE,
+                        null
+                    )
+
+                    ActionUtil.performAction(action, event)
+                }
+            }
         }
-
-        val event = AnActionEvent.createEvent(
-            action,
-            dataContext,
-            null,
-            ActionPlaces.UNKNOWN,
-            com.intellij.openapi.actionSystem.ActionUiKind.NONE,
-            null
-        )
-
-        ActionUtil.performAction(action, event)
     }
 
-    fun checkoutBranch(ref: String) {
-        if (repositories.isEmpty()) return
+
+
+    fun checkoutBranch(ref: String, onFinished: (() -> Unit)? = null) {
+        if (repositories.isEmpty()) {
+            onFinished?.invoke()
+            return
+        }
 
         val gitBrancher = GitBrancher.getInstance(project)
 
         gitBrancher.checkout(ref, false, repositories) {
+            onFinished?.invoke()
         }
     }
 
