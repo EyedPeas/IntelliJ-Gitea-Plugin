@@ -164,18 +164,23 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
                 val headerPanel = JPanel(BorderLayout(5, 0)).apply {
                     alignmentX = LEFT_ALIGNMENT
                     val threadId = "$path#$safePosition"
-                    val threadTitle = "Thread: $threadId"
-                    val titleLabel = if (isResolved) {
-                        val status = if (isStale) "[Outdated] [Resolved] " else "[Resolved] "
-                        JBLabel("$status$threadTitle - Resolved by ${resolver.login}")
-                    } else if (isStale) {
-                        JBLabel("[Outdated] $threadTitle")
-                    } else {
-                        LinkLabel<Unit>(threadTitle, null) { _, _ ->
-                            if (path.isNotEmpty() && position != null) {
-                                gitUtils.openFileAtPosition(path, position.toLong())
-                            }
+                    var threadTitle = "Thread: $threadId"
+
+                    if (isResolved && isStale) {
+                        threadTitle = "[Outdated] [Resolved] $threadTitle - Resolved by ${resolver.login}"
+                    }
+                    if (isResolved && !isStale) {
+                        threadTitle = "[Resolved] $threadTitle - Resolved by ${resolver.login}"
+                    }
+                    if (!isResolved && isStale) {
+                        threadTitle = "[Outdated] $threadTitle"
+                    }
+
+                    val titleLabel = LinkLabel<Unit>(threadTitle, null) { _, _ ->
+                        if (path.isNotEmpty() && position != null) {
+                            gitUtils.openFileAtPosition(path, position.toLong())
                         }
+
                     }
                     add(titleLabel, BorderLayout.CENTER)
                 }
@@ -192,12 +197,13 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
                     val toggleAction = object : MouseAdapter() {
                         override fun mouseClicked(e: MouseEvent?) {
                             contentWrapper.isVisible = !contentWrapper.isVisible
-                            arrowLabel.icon = if (contentWrapper.isVisible) AllIcons.General.ArrowDown else AllIcons.General.ArrowRight
+                            arrowLabel.icon =
+                                if (contentWrapper.isVisible) AllIcons.General.ArrowDown else AllIcons.General.ArrowRight
                             revalidate()
                             repaint()
                         }
                     }
-                    
+
                     // Allow clicking on arrow label too (it's part of headerPanel but just to be sure)
                     arrowLabel.addMouseListener(toggleAction)
                     arrowLabel.cursor = Cursor.getPredefinedCursor(Cursor.HAND_CURSOR)
