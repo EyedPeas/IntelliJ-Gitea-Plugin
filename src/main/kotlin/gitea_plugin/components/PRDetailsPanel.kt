@@ -9,6 +9,9 @@ import gitea_plugin.GitUtils
 import gitea_plugin.GlobalGiteaCache
 import io.gitea.model.PullRequest
 import java.awt.BorderLayout
+import java.awt.FlowLayout
+import javax.swing.JButton
+import javax.swing.JPanel
 import javax.swing.table.DefaultTableModel
 
 class PRDetailsPanel(private val project: Project) : JBPanel<PRDetailsPanel>(BorderLayout()) {
@@ -22,8 +25,38 @@ class PRDetailsPanel(private val project: Project) : JBPanel<PRDetailsPanel>(Bor
     private var currentPR: PullRequest? = null
     private val gitUtils = GitUtils(project)
 
+    private val checkoutButton = JButton().apply {
+        isVisible = false
+        addActionListener {
+            val pr = currentPR ?: return@addActionListener
+            val ref = pr.head?.ref ?: return@addActionListener
+
+            ApplicationManager.getApplication().executeOnPooledThread {
+                gitUtils.fetchAll()
+                ApplicationManager.getApplication().invokeLater {
+                    val onFinished = {
+                        updateButtonState(currentPR)
+                    }
+                    if (!gitUtils.isBranchCurrent(ref)) {
+                        gitUtils.checkoutBranch(ref) {
+                            gitUtils.updateProject()
+                            onFinished()
+                        }
+                    } else {
+                        gitUtils.updateProject()
+                        onFinished()
+                    }
+                }
+            }
+        }
+    }
+
     init {
+        val topPanel = JPanel(FlowLayout(FlowLayout.RIGHT))
+        topPanel.add(checkoutButton)
         add(pane, BorderLayout.CENTER)
+        add(topPanel, BorderLayout.SOUTH)
+
 
         GlobalGiteaCache.addListener { pr ->
             ApplicationManager.getApplication().invokeLater {
@@ -53,8 +86,39 @@ class PRDetailsPanel(private val project: Project) : JBPanel<PRDetailsPanel>(Bor
         tableModel.addRow(arrayOf("Comment Threads", selectedPR.comments?.toString() ?: "0"))
         tableModel.addRow(arrayOf("Branch", selectedPR.head.ref ?: ""))
 
+        updateButtonState(selectedPR)
+
         revalidate()
         repaint()
+    }
+
+    private fun updateButtonState(pr: PullRequest?) {
+        val ref = pr?.head?.ref
+        if (ref == null) {
+            ApplicationManager.getApplication().invokeLater {
+                checkoutButton.isVisible = false
+            }
+            return
+        }
+
+        ApplicationManager.getApplication().executeOnPooledThread {
+            val isCurrent = gitUtils.isBranchCurrent(ref)
+            val isInSync = if (isCurrent) gitUtils.isCurrentBranchInSync() else true
+
+            ApplicationManager.getApplication().invokeLater {
+                if (!isCurrent) {
+                    checkoutButton.text = "Checkout and update branch"
+                    checkoutButton.isVisible = true
+                } else if (!isInSync) {
+                    checkoutButton.text = "Update branch"
+                    checkoutButton.isVisible = true
+                } else {
+                    checkoutButton.isVisible = false
+                }
+                revalidate()
+                repaint()
+            }
+        }
     }
 
 }

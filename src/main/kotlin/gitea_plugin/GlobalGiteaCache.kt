@@ -57,17 +57,6 @@ object GlobalGiteaCache {
                 loadComments(project, pr)
                 loadChangedFiles(project, pr)
             }
-            if (pr.head?.ref != null) {
-                ApplicationManager.getApplication().executeOnPooledThread {
-                    val gitUtils = GitUtils(project)
-                    gitUtils.fetchAll()
-                    ApplicationManager.getApplication().invokeLater {
-                        gitUtils.checkoutBranch(pr.head.ref) {
-                            gitUtils.updateCurrentBranchIfNotInSync()
-                        }
-                    }
-                }
-            }
         }
         listeners.forEach { it(pr) }
     }

@@ -101,7 +101,7 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
             return
         } else {
             val updateCommentsButton = JButton("Update Comments")
-            contentPanel.add(updateCommentsButton)
+            add(updateCommentsButton, BorderLayout.SOUTH)
 
             updateCommentsButton.addActionListener {
                 GlobalGiteaCache.updateComments(project, pr)

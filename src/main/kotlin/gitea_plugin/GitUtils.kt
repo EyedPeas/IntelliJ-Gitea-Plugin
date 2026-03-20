@@ -61,44 +61,59 @@ class GitUtils(val project: Project) {
         }
     }
 
+    fun isBranchCurrent(ref: String): Boolean {
+        println("current branch: ${getCurrentBranch()}")
+        println("ref: $ref")
+        return getCurrentBranch() == ref
+    }
+
+    fun isCurrentBranchInSync(): Boolean {
+        if (repositories.isEmpty()) return true
+
+        var notInSync = false
+        for (repo in repositories) {
+            val currentBranch = repo.currentBranch ?: continue
+            val trackInfo = repo.getBranchTrackInfo(currentBranch.name) ?: continue
+            val remoteBranch = trackInfo.remoteBranch
+
+            val localHash = repo.branches.getHash(currentBranch)
+            val remoteHash = repo.branches.getHash(remoteBranch)
+
+            if (localHash != null && remoteHash != null && localHash != remoteHash) {
+                notInSync = true
+                break
+            }
+        }
+        return !notInSync
+    }
+
+    fun updateProject() {
+        ApplicationManager.getApplication().invokeLater {
+            val actionManager = ActionManager.getInstance()
+            val action = actionManager.getAction("Vcs.UpdateProject") ?: return@invokeLater
+            val dataContext = DataContext { dataId ->
+                if (CommonDataKeys.PROJECT.`is`(dataId)) project else null
+            }
+
+            val event = AnActionEvent.createEvent(
+                action,
+                dataContext,
+                null,
+                ActionPlaces.UNKNOWN,
+                com.intellij.openapi.actionSystem.ActionUiKind.NONE,
+                null
+            )
+
+            ActionUtil.performAction(action, event)
+        }
+    }
+
     fun updateCurrentBranchIfNotInSync() {
         if (repositories.isEmpty()) return
 
         ApplicationManager.getApplication().executeOnPooledThread {
-            var notInSync = false
-            for (repo in repositories) {
-                val currentBranch = repo.currentBranch ?: continue
-                val trackInfo = repo.getBranchTrackInfo(currentBranch.name) ?: continue
-                val remoteBranch = trackInfo.remoteBranch
-
-                val localHash = repo.branches.getHash(currentBranch)
-                val remoteHash = repo.branches.getHash(remoteBranch)
-
-                if (localHash != null && remoteHash != null && localHash != remoteHash) {
-                    notInSync = true
-                    break
-                }
-            }
-
-            if (notInSync) {
-                ApplicationManager.getApplication().invokeLater {
-                    val actionManager = ActionManager.getInstance()
-                    val action = actionManager.getAction("Vcs.UpdateProject") ?: return@invokeLater
-                    val dataContext = DataContext { dataId ->
-                        if (CommonDataKeys.PROJECT.`is`(dataId)) project else null
-                    }
-
-                    val event = AnActionEvent.createEvent(
-                        action,
-                        dataContext,
-                        null,
-                        ActionPlaces.UNKNOWN,
-                        com.intellij.openapi.actionSystem.ActionUiKind.NONE,
-                        null
-                    )
-
-                    ActionUtil.performAction(action, event)
-                }
+            if (!isCurrentBranchInSync()) {
+                updateProject()
             }
         }
     }
