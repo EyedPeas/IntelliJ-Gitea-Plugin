@@ -35,7 +35,7 @@ object GlobalGiteaCache {
     fun setChangedFiles(files: Set<String>) {
         synchronized(changedFiles) {
             changedFiles.clear()
-            changedFiles.addAll(files)
+            changedFiles.addAll(files.map { it.replace("\\", "/").trim('/') })
         }
         notifyReviewListeners()
     }

@@ -9,6 +9,7 @@ import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vfs.LocalFileSystem
 import git4idea.branch.GitBrancher
 import git4idea.fetch.GitFetchSupport
@@ -133,6 +134,11 @@ class GitUtils(val project: Project) {
         }
     }
 
+    fun getCurrentRepoRoot(): String? {
+        if (repositories.isEmpty()) return null
+        return repositories.first().root.path
+    }
+
     fun getCurrentBranch(): String? {
         if (repositories.isEmpty()) return null
         return repositories.firstOrNull()?.currentBranch?.name
@@ -142,6 +148,16 @@ class GitUtils(val project: Project) {
         val repo = repositoryManager.getRepositoryForFile(virtualFile) ?: return null
         val path = com.intellij.openapi.vfs.VfsUtilCore.getRelativePath(virtualFile, repo.root) ?: return null
         return path.replace("\\", "/").trim('/')
+    }
+
+    fun openFile(filePath: FilePath) {
+        println("openfile $filePath")
+        val virtualFile = filePath.virtualFile ?: LocalFileSystem.getInstance().findFileByPath(filePath.path)
+        println("virtualFile ${virtualFile?.path}")
+        if (virtualFile != null) {
+            val descriptor = OpenFileDescriptor(project, virtualFile)
+            descriptor.navigate(true)
+        }
     }
 
     fun openFileAtPosition(path: String, position: Long) {
