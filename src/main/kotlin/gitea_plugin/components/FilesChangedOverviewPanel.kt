@@ -12,10 +12,12 @@ import com.intellij.openapi.vcs.changes.ui.DirectoryChangesGroupingPolicy
 import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.vcsUtil.VcsUtil
+import git4idea.GitContentRevision
+import git4idea.GitRevisionNumber
 import gitea_plugin.GitUtils
 import gitea_plugin.GlobalGiteaCache
+import io.gitea.model.ChangedFile
 import java.awt.BorderLayout
-import java.io.File
 import javax.swing.tree.DefaultTreeModel
 
 class FilesChangedOverviewPanel(private val project: Project) : JBPanel<FilesChangedOverviewPanel>() {
@@ -23,9 +25,11 @@ class FilesChangedOverviewPanel(private val project: Project) : JBPanel<FilesCha
     private fun getChangesToDisplay(): List<Change> {
         val changedFiles = GlobalGiteaCache.getChangedFiles()
         val repoRootPath = GitUtils(project).getCurrentRepoRoot() ?: project.basePath
+        val baseBranch = GlobalGiteaCache.getBaseBranch() ?: "master"
 
-        return changedFiles.map { filePath ->
-            val normalizedPath = filePath.replace("\\", "/").trim('/')
+        return changedFiles.map { changedFile ->
+            val filename = changedFile.filename
+            val normalizedPath = filename.replace("\\", "/").trim('/')
             val absolutePath = if (repoRootPath != null) {
                 val base = repoRootPath.replace("\\", "/").removeSuffix("/")
                 "$base/$normalizedPath"
@@ -34,18 +38,53 @@ class FilesChangedOverviewPanel(private val project: Project) : JBPanel<FilesCha
             }
 
             val vcsFilePath = VcsUtil.getFilePath(absolutePath, false)
-            val virtualFile = vcsFilePath.virtualFile ?: LocalFileSystem.getInstance().findFileByPath(absolutePath)
+            val baseRevisionNumber = GitRevisionNumber(baseBranch)
 
-            val revision = if (virtualFile != null) {
-                CurrentContentRevision(vcsFilePath)
-            } else {
-                object : ContentRevision {
-                    override fun getContent(): String? = null
-                    override fun getFile(): FilePath = vcsFilePath
-                    override fun getRevisionNumber() = com.intellij.openapi.vcs.history.VcsRevisionNumber.NULL
+            val beforeRevision: ContentRevision?
+            val afterRevision: ContentRevision?
+
+            when (changedFile.status) {
+                "added" -> {
+                    beforeRevision = null
+                    afterRevision = CurrentContentRevision(vcsFilePath)
+                }
+                "deleted" -> {
+                    beforeRevision = GitContentRevision.createRevision(vcsFilePath, baseRevisionNumber, project)
+                        ?: createDummyRevision(vcsFilePath)
+                    afterRevision = null
+                }
+                "renamed" -> {
+                    val previousPath = changedFile.previousFilename
+                    val normalizedPreviousPath = previousPath.replace("\\", "/").trim('/')
+                    val absolutePreviousPath = if (repoRootPath != null) {
+                        val base = repoRootPath.replace("\\", "/").removeSuffix("/")
+                        "$base/$normalizedPreviousPath"
+                    } else {
+                        normalizedPreviousPath
+                    }
+                    val previousVcsFilePath = VcsUtil.getFilePath(absolutePreviousPath, false)
+
+                    beforeRevision = GitContentRevision.createRevision(previousVcsFilePath, baseRevisionNumber, project)
+                        ?: createDummyRevision(previousVcsFilePath)
+                    afterRevision = CurrentContentRevision(vcsFilePath)
+                }
+                else -> {
+                    // modified or default
+                    beforeRevision = GitContentRevision.createRevision(vcsFilePath, baseRevisionNumber, project)
+                        ?: createDummyRevision(vcsFilePath)
+                    afterRevision = CurrentContentRevision(vcsFilePath)
                 }
             }
-            Change(revision, revision)
+
+            Change(beforeRevision, afterRevision)
+        }
+    }
+
+    private fun createDummyRevision(vcsFilePath: FilePath): ContentRevision {
+        return object : ContentRevision {
+            override fun getContent(): String? = null
+            override fun getFile(): FilePath = vcsFilePath
+            override fun getRevisionNumber() = com.intellij.openapi.vcs.history.VcsRevisionNumber.NULL
         }
     }
 
@@ -73,6 +112,8 @@ class FilesChangedOverviewPanel(private val project: Project) : JBPanel<FilesCha
         add(scrollPane, BorderLayout.CENTER)
 
         tree.setDoubleClickHandler {
+
+
             val selectedNodes = tree.selectionPaths?.map { it.lastPathComponent as? ChangesBrowserNode<*> }
             selectedNodes?.forEach { node ->
                 val userObject = node?.userObject

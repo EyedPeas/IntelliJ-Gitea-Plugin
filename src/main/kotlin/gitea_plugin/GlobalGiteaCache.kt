@@ -5,6 +5,7 @@ import com.intellij.openapi.project.Project
 import io.gitea.model.PullRequest
 import io.gitea.model.PullReview
 import io.gitea.model.PullReviewComment
+import io.gitea.model.ChangedFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -18,7 +19,8 @@ object GlobalGiteaCache {
     private val reviews = ConcurrentHashMap<Long, PullReview>()
     private val reviewComments = ConcurrentHashMap<Long, List<PullReviewComment>>()
     private val changedLines = ConcurrentHashMap<String, Set<Int>>()
-    private val changedFiles = mutableSetOf<String>()
+    private val lineDiffHunks = ConcurrentHashMap<String, Map<Int, String>>()
+    private val changedFiles = mutableListOf<ChangedFile>()
     private var baseBranch: String? = null
     private var shouldShowReviewModeBanner = false
     private var showReviewModeBanner = true
@@ -32,17 +34,17 @@ object GlobalGiteaCache {
     fun setReviewModeEnabled(enabled: Boolean) {
         showReviewModeBanner = enabled
     }
-    fun setChangedFiles(files: Set<String>) {
+    fun setChangedFiles(files: List<ChangedFile>) {
         synchronized(changedFiles) {
             changedFiles.clear()
-            changedFiles.addAll(files.map { it.replace("\\", "/").trim('/') })
+            changedFiles.addAll(files)
         }
         notifyReviewListeners()
     }
 
-    fun getChangedFiles(): Set<String> {
+    fun getChangedFiles(): List<ChangedFile> {
         synchronized(changedFiles) {
-            return changedFiles.toSet()
+            return changedFiles.toList()
         }
     }
 
@@ -101,8 +103,7 @@ object GlobalGiteaCache {
     private fun loadChangedFiles(project: Project, pr: PullRequest) {
         val giteaService = GiteaService(project)
         giteaService.fetchAllChangedFiles(pr.number, onSuccess =  { changedFiles ->
-            setChangedFiles(changedFiles.map { it.filename }.toSet())
-            notifyReviewListeners()
+            setChangedFiles(changedFiles)
         }, onError = {
             println("Error fetching changed files")
         })
