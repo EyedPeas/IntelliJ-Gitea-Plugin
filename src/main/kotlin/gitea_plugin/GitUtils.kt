@@ -63,8 +63,6 @@ class GitUtils(val project: Project) {
     }
 
     fun isBranchCurrent(ref: String): Boolean {
-        println("current branch: ${getCurrentBranch()}")
-        println("ref: $ref")
         return getCurrentBranch() == ref
     }
 

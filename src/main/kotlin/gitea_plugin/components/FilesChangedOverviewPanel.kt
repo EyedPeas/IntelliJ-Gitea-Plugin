@@ -2,6 +2,8 @@ package gitea_plugin.components
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.ui.MessageDialogBuilder
+import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vcs.changes.ContentRevision
@@ -16,6 +18,7 @@ import git4idea.GitContentRevision
 import git4idea.GitRevisionNumber
 import gitea_plugin.GitUtils
 import gitea_plugin.GlobalGiteaCache
+import gitea_plugin.MyMessageBundle
 import io.gitea.model.ChangedFile
 import java.awt.BorderLayout
 import javax.swing.tree.DefaultTreeModel
@@ -48,11 +51,13 @@ class FilesChangedOverviewPanel(private val project: Project) : JBPanel<FilesCha
                     beforeRevision = null
                     afterRevision = CurrentContentRevision(vcsFilePath)
                 }
+
                 "deleted" -> {
                     beforeRevision = GitContentRevision.createRevision(vcsFilePath, baseRevisionNumber, project)
                         ?: createDummyRevision(vcsFilePath)
                     afterRevision = null
                 }
+
                 "renamed" -> {
                     val previousPath = changedFile.previousFilename
                     val normalizedPreviousPath = previousPath.replace("\\", "/").trim('/')
@@ -68,6 +73,7 @@ class FilesChangedOverviewPanel(private val project: Project) : JBPanel<FilesCha
                         ?: createDummyRevision(previousVcsFilePath)
                     afterRevision = CurrentContentRevision(vcsFilePath)
                 }
+
                 else -> {
                     // modified or default
                     beforeRevision = GitContentRevision.createRevision(vcsFilePath, baseRevisionNumber, project)
@@ -91,11 +97,11 @@ class FilesChangedOverviewPanel(private val project: Project) : JBPanel<FilesCha
     private val tree = object : AsyncChangesTreeImpl<Change>(project, false, false, Change::class.java) {
         override fun buildTreeModel(grouping: ChangesGroupingPolicyFactory, changes: List<Change>): DefaultTreeModel {
             val builder = TreeModelBuilder(project, DirectoryChangesGroupingPolicy.Factory())
-            
+
             val changesToUse = changes.ifEmpty {
                 getChangesToDisplay()
             }
-            
+
             builder.setChanges(changesToUse, null)
             return builder.build()
         }
@@ -112,7 +118,22 @@ class FilesChangedOverviewPanel(private val project: Project) : JBPanel<FilesCha
         add(scrollPane, BorderLayout.CENTER)
 
         tree.setDoubleClickHandler {
+            val pr = GlobalGiteaCache.getLoadedPullRequest()
+            val headRef = pr?.head?.ref
+            if (headRef != null && !GitUtils(project).isBranchCurrent(headRef)) {
+                val result = MessageDialogBuilder.yesNo(
+                    MyMessageBundle.message("notification.branch.mismatch.title"),
+                    MyMessageBundle.message("notification.branch.mismatch.message", headRef)
+                ).yesText("Checkout and update branch").noText("Cancel").ask(project)
 
+                if (result) {
+                    GitUtils(project).checkoutBranch(headRef) {
+                        GitUtils(project).updateProject()
+                    }
+                }
+
+                return@setDoubleClickHandler true
+            }
 
             val selectedNodes = tree.selectionPaths?.map { it.lastPathComponent as? ChangesBrowserNode<*> }
             selectedNodes?.forEach { node ->
