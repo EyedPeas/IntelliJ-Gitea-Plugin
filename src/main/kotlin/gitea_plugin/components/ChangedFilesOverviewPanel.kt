@@ -3,12 +3,10 @@ package gitea_plugin.components
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.MessageDialogBuilder
-import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.vcs.FilePath
 import com.intellij.openapi.vcs.changes.Change
 import com.intellij.openapi.vcs.changes.ContentRevision
 import com.intellij.openapi.vcs.changes.CurrentContentRevision
-import com.intellij.openapi.vfs.LocalFileSystem
 import com.intellij.openapi.vcs.changes.ui.*
 import com.intellij.openapi.vcs.changes.ui.DirectoryChangesGroupingPolicy
 import com.intellij.ui.components.JBPanel
@@ -19,11 +17,10 @@ import git4idea.GitRevisionNumber
 import gitea_plugin.GitUtils
 import gitea_plugin.GlobalGiteaCache
 import gitea_plugin.MyMessageBundle
-import io.gitea.model.ChangedFile
 import java.awt.BorderLayout
 import javax.swing.tree.DefaultTreeModel
 
-class FilesChangedOverviewPanel(private val project: Project) : JBPanel<FilesChangedOverviewPanel>() {
+class ChangedFilesOverviewPanel(private val project: Project) : JBPanel<ChangedFilesOverviewPanel>() {
 
     private fun getChangesToDisplay(): List<Change> {
         val changedFiles = GlobalGiteaCache.getChangedFiles()
