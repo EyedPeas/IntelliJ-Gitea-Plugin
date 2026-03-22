@@ -45,7 +45,7 @@ class GiteaCommentComponent(
                     font = font.deriveFont(Font.BOLD)
                     foreground = editor.colorsScheme.defaultForeground
                 }
-                val resolverText = comment.resolver?.login?.let { " (resolved by $it)" } ?: " (no resolver)"
+                val resolverText = comment.resolver?.login?.let { " (resolved by $it)" } ?: ""
                 val infoLabel = JBLabel(" at $time$resolverText").apply {
                     font = font.deriveFont(Font.ITALIC)
                     foreground = JBColor.GRAY

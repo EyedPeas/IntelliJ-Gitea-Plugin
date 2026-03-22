@@ -2,10 +2,10 @@ package gitea_plugin
 
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
+import io.gitea.model.ChangedFile
 import io.gitea.model.PullRequest
 import io.gitea.model.PullReview
 import io.gitea.model.PullReviewComment
-import io.gitea.model.ChangedFile
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -19,7 +19,6 @@ object GlobalGiteaCache {
     private val reviews = ConcurrentHashMap<Long, PullReview>()
     private val reviewComments = ConcurrentHashMap<Long, List<PullReviewComment>>()
     private val changedLines = ConcurrentHashMap<String, Set<Int>>()
-    private val lineDiffHunks = ConcurrentHashMap<String, Map<Int, String>>()
     private val changedFiles = mutableListOf<ChangedFile>()
     private var baseBranch: String? = null
     private var shouldShowReviewModeBanner = false
@@ -33,6 +32,7 @@ object GlobalGiteaCache {
 
     fun setReviewModeEnabled(enabled: Boolean) {
         showReviewModeBanner = enabled
+        notifyReviewListeners()
     }
     fun setChangedFiles(files: List<ChangedFile>) {
         synchronized(changedFiles) {

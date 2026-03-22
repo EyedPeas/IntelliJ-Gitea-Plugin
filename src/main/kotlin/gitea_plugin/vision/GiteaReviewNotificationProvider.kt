@@ -1,19 +1,32 @@
 package gitea_plugin.vision
 
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.fileEditor.FileEditor
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.EditorNotificationPanel
 import com.intellij.ui.EditorNotificationProvider
-import com.intellij.ui.EditorNotifications
 import gitea_plugin.GlobalGiteaCache
-import kotlinx.html.Entities
 import java.util.function.Function
 import javax.swing.JComponent
 
-class GiteaReviewNotificationProvider : EditorNotificationProvider {
+class GiteaReviewNotificationProvider(private val project: Project) : EditorNotificationProvider {
+
+    init {
+        val isUpdating = java.util.concurrent.atomic.AtomicBoolean(false)
+        GlobalGiteaCache.addReviewListener {
+            if (isUpdating.getAndSet(true)) return@addReviewListener
+            ApplicationManager.getApplication().invokeLater({
+                isUpdating.set(false)
+                if (!project.isDisposed) {
+                    GiteaCommentInlayManager.updateAllEditors(project)
+                }
+            }, ModalityState.any())
+        }
+    }
+
     override fun collectNotificationData(project: Project, file: VirtualFile): Function<in FileEditor, out JComponent?>? {
 //        var isPullRequestLoaded = false
 //        GlobalGiteaCache.addListener { pr ->
@@ -42,12 +55,10 @@ class GiteaReviewNotificationProvider : EditorNotificationProvider {
             if (GlobalGiteaCache.isReviewModeEnabled()) {
                 panel.createActionLabel("Disable Review Mode") {
                     GlobalGiteaCache.setReviewModeEnabled(false)
-                    updateAllEditors(project)
                 }
             } else {
                 panel.createActionLabel("Enable Review Mode") {
                     GlobalGiteaCache.setReviewModeEnabled(true)
-                    updateAllEditors(project)
                 }
             }
 
@@ -55,16 +66,4 @@ class GiteaReviewNotificationProvider : EditorNotificationProvider {
         }
     }
 
-    private fun updateAllEditors(project: Project) {
-        val fileEditorManager = FileEditorManager.getInstance(project)
-        fileEditorManager.openFiles.forEach { file ->
-            fileEditorManager.getEditors(file).forEach { editor ->
-                if (editor is TextEditor) {
-                    GiteaCommentInlayManager.updateInlaysAsync(editor.editor, file)
-                }
-            }
-        }
-        // Refresh notifications
-        EditorNotifications.getInstance(project).updateAllNotifications()
-    }
 }

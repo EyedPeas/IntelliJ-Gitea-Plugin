@@ -10,7 +10,10 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vcs.FilePath
+import com.intellij.openapi.vcs.ProjectLevelVcsManager
 import com.intellij.openapi.vfs.LocalFileSystem
+import com.intellij.openapi.vfs.VfsUtilCore
+import com.intellij.openapi.vfs.VirtualFile
 import git4idea.branch.GitBrancher
 import git4idea.fetch.GitFetchSupport
 import git4idea.repo.GitRepositoryManager
@@ -107,17 +110,6 @@ class GitUtils(val project: Project) {
         }
     }
 
-    fun updateCurrentBranchIfNotInSync() {
-        if (repositories.isEmpty()) return
-
-        ApplicationManager.getApplication().executeOnPooledThread {
-            if (!isCurrentBranchInSync()) {
-                updateProject()
-            }
-        }
-    }
-
-
 
     fun checkoutBranch(ref: String, onFinished: (() -> Unit)? = null) {
         if (repositories.isEmpty()) {
@@ -133,18 +125,22 @@ class GitUtils(val project: Project) {
     }
 
     fun getCurrentRepoRoot(): String? {
-        if (repositories.isEmpty()) return null
-        return repositories.first().root.path
+        return repositoryManager.repositories.firstOrNull()?.root?.path
     }
 
     fun getCurrentBranch(): String? {
-        if (repositories.isEmpty()) return null
-        return repositories.firstOrNull()?.currentBranch?.name
+        val repo = repositories.firstOrNull() ?: return null
+        return repo.currentBranch?.name
     }
 
-    fun getRepoRelativePath(virtualFile: com.intellij.openapi.vfs.VirtualFile): String? {
-        val repo = repositoryManager.getRepositoryForFile(virtualFile) ?: return null
-        val path = com.intellij.openapi.vfs.VfsUtilCore.getRelativePath(virtualFile, repo.root) ?: return null
+    fun getRepoRelativePath(virtualFile: VirtualFile): String? {
+        val vcsManager = ProjectLevelVcsManager.getInstance(project)
+        val root = vcsManager.getVcsRootFor(virtualFile) ?: return null
+        
+        // Ensure it's a Git repository
+        if (vcsManager.getVcsFor(virtualFile)?.name != "Git") return null
+        
+        val path = VfsUtilCore.getRelativePath(virtualFile, root) ?: return null
         return path.replace("\\", "/").trim('/')
     }
 

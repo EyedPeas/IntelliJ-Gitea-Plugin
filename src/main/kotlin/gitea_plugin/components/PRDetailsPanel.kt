@@ -14,7 +14,7 @@ import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.table.DefaultTableModel
 
-class PRDetailsPanel(private val project: Project) : JBPanel<PRDetailsPanel>(BorderLayout()) {
+class PRDetailsPanel(project: Project) : JBPanel<PRDetailsPanel>(BorderLayout()) {
     private val tableModel = object : DefaultTableModel(arrayOf("Property", "Value"), 0) {
         override fun isCellEditable(row: Int, column: Int): Boolean = false
     }
@@ -33,11 +33,12 @@ class PRDetailsPanel(private val project: Project) : JBPanel<PRDetailsPanel>(Bor
 
             ApplicationManager.getApplication().executeOnPooledThread {
                 gitUtils.fetchAll()
+                val isCurrent = gitUtils.isBranchCurrent(ref)
                 ApplicationManager.getApplication().invokeLater {
                     val onFinished = {
                         updateButtonState(currentPR)
                     }
-                    if (!gitUtils.isBranchCurrent(ref)) {
+                    if (!isCurrent) {
                         gitUtils.checkoutBranch(ref) {
                             gitUtils.updateProject()
                             onFinished()

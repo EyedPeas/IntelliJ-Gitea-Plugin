@@ -51,7 +51,6 @@ class ChangedFilesOverviewPanel(private val project: Project) : JBPanel<ChangedF
 
                 "deleted" -> {
                     beforeRevision = GitContentRevision.createRevision(vcsFilePath, baseRevisionNumber, project)
-                        ?: createDummyRevision(vcsFilePath)
                     afterRevision = null
                 }
 
@@ -67,14 +66,12 @@ class ChangedFilesOverviewPanel(private val project: Project) : JBPanel<ChangedF
                     val previousVcsFilePath = VcsUtil.getFilePath(absolutePreviousPath, false)
 
                     beforeRevision = GitContentRevision.createRevision(previousVcsFilePath, baseRevisionNumber, project)
-                        ?: createDummyRevision(previousVcsFilePath)
                     afterRevision = CurrentContentRevision(vcsFilePath)
                 }
 
                 else -> {
                     // modified or default
                     beforeRevision = GitContentRevision.createRevision(vcsFilePath, baseRevisionNumber, project)
-                        ?: createDummyRevision(vcsFilePath)
                     afterRevision = CurrentContentRevision(vcsFilePath)
                 }
             }
@@ -148,14 +145,20 @@ class ChangedFilesOverviewPanel(private val project: Project) : JBPanel<ChangedF
 
         tree.requestRefresh()
 
+        var isUpdatingListener = java.util.concurrent.atomic.AtomicBoolean(false)
         GlobalGiteaCache.addListener { _ ->
+            if (isUpdatingListener.getAndSet(true)) return@addListener
             ApplicationManager.getApplication().invokeLater {
+                isUpdatingListener.set(false)
                 tree.requestRefresh()
             }
         }
 
+        var isUpdatingReviewListener = java.util.concurrent.atomic.AtomicBoolean(false)
         GlobalGiteaCache.addReviewListener {
+            if (isUpdatingReviewListener.getAndSet(true)) return@addReviewListener
             ApplicationManager.getApplication().invokeLater {
+                isUpdatingReviewListener.set(false)
                 tree.requestRefresh()
             }
         }

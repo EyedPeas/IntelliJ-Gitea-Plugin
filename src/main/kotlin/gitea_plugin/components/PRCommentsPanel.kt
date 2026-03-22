@@ -45,8 +45,11 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
             foreground = UIUtil.getInactiveTextColor()
         })
 
+        var isUpdatingListener = java.util.concurrent.atomic.AtomicBoolean(false)
         GlobalGiteaCache.addListener { pr ->
+            if (isUpdatingListener.getAndSet(true)) return@addListener
             ApplicationManager.getApplication().invokeLater {
+                isUpdatingListener.set(false)
                 if (pr != null) {
                     showLoadingText()
                 } else {
@@ -55,8 +58,11 @@ class PRCommentsPanel(private val project: Project) : JBPanel<PRCommentsPanel>(B
             }
         }
 
+        var isUpdatingReviewListener = java.util.concurrent.atomic.AtomicBoolean(false)
         GlobalGiteaCache.addReviewListener {
+            if (isUpdatingReviewListener.getAndSet(true)) return@addReviewListener
             ApplicationManager.getApplication().invokeLater {
+                isUpdatingReviewListener.set(false)
                 refreshComments()
                 triggerCodeVisionUpdate()
             }

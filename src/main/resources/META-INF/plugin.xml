@@ -33,6 +33,7 @@
         <toolWindow id="MyToolWindow" factoryClass="gitea_plugin.components.MyToolWindowFactory"
                     icon="AllIcons.Toolwindows.ToolWindowPalette"/>
         <editorNotificationProvider implementation="gitea_plugin.vision.GiteaReviewNotificationProvider"/>
+        <openapi.vcs.impl.LocalLineStatusTrackerProvider implementation="gitea_plugin.vision.GiteaLineStatusTrackerProvider" order="first"/>
     </extensions>
 
     <applicationListeners>

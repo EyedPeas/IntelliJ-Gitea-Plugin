@@ -18,12 +18,7 @@ class GiteaService(private val project: Project) {
     private var gitRepoInfo: GitRepoInfo? = null
 
     init {
-        gitRepoInfo = GitUtils(project).getRepoBaseUrl()
-        gitRepoInfo?.let {
-            repoOwner = it.repoOwner
-            repoName = it.repoName
-            configureApiClient(it)
-        }
+        // Initialization is done lazily via ensureReady() to avoid calling GitUtils on EDT during service creation
     }
 
     private fun ensureReady() {
@@ -99,22 +94,6 @@ class GiteaService(private val project: Project) {
         }
     }
 
-    fun fetchSpecificPullRequestReview(pullRequestIndex: Long, reviewIndex: Long, onSuccess: (PullReview) -> Unit, onError: () -> Unit) {
-        ensureReady()
-        if (!isReady()) {
-            onError()
-            return
-        }
-        val repoApi = RepositoryApi()
-        try {
-            val results = repoApi.repoGetPullReview(repoOwner, repoName, pullRequestIndex, reviewIndex)
-            onSuccess(results)
-        } catch (e: Exception) {
-            e.printStackTrace()
-            onError()
-        }
-    }
-
     fun fetchPullReviewComments(pullRequestIndex: Long, reviewIndex: Long, onSuccess: (List<PullReviewComment>) -> Unit, onError: () -> Unit) {
         ApplicationManager.getApplication().executeOnPooledThread {
             ensureReady()
@@ -173,7 +152,7 @@ class GiteaService(private val project: Project) {
                 ApplicationManager.getApplication().invokeLater {
                     onSuccess(changedFiles)
                 }
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 onError()
             }
         }
